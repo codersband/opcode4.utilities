@@ -10,7 +10,7 @@ var path = {
 }
 
 gulp.task('nuget-pack', function () {
-    return gulp.src('opcode4.web.csproj')
+    return gulp.src('opcode4.utilities.csproj')
         .pipe(nuget.pack({
             nuget: path.nugetPath,
             outputDirectory: path.nugetOutPath, //'./nupkgs/',
