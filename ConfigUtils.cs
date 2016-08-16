@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Linq;
 using System.Net;
 
 namespace opcode4.utilities
@@ -15,35 +16,94 @@ namespace opcode4.utilities
 
     public class MultiValueParameter
     {
-        private readonly List<string> _lst = new List<string>();
+        public readonly string[] Items;
 
-        public MultiValueParameter(string value)
+        public MultiValueParameter(string delimitedString)
         {
-            if (string.IsNullOrEmpty(value)) return;
-            
-            var arr = value.Split(',');
-            foreach (string s in arr)
+            if (string.IsNullOrEmpty(delimitedString))
             {
-                _lst.Add(s);
+                Items = null;
+                return;
             }
+
+            Items = delimitedString.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
         }
 
         public string ReadString(int index)
         {
-            return _lst[index];
+            if (Items == null)
+                throw new Exception("MultiValueParameter: Items object was not assigned");
+            return Items[index];
         }
+
+        public bool IsEmpty => (Items == null || Items.Length == 0);
 
         public long ReadLong(int index)
         {
-            return Int64.Parse(_lst[index]);
+            return Int64.Parse(ReadString(index));
         }
 
         public long ReadInt(int index)
         {
-            return Int32.Parse(_lst[index]);
+            return Int32.Parse(ReadString(index));
         }
 
-        public string[] ToArray()
+        public int Count => Items.Length;
+    }
+
+    public class MultiValueParameter<T>
+    {
+        private readonly List<T> _lst = new List<T>();
+
+        public MultiValueParameter(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return;
+
+            var arr = value.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            if (typeof(T) == typeof(ulong))
+            {
+                _lst = arr.Select(s => (T)(object)ulong.Parse(s)).ToList();
+            }
+            else if (typeof(T) == typeof(long))
+            {
+                _lst = arr.Select(s => (T)(object)long.Parse(s)).ToList();
+            }
+            else if (typeof(T) == typeof(double))
+            {
+                _lst = arr.Select(s => (T)(object)double.Parse(s)).ToList();
+            }
+            else if (typeof(T) == typeof(int))
+            {
+                _lst = arr.Select(s => (T)(object)int.Parse(s)).ToList();
+            }
+            else if (typeof(T) == typeof(uint))
+            {
+                _lst = arr.Select(s => (T)(object)uint.Parse(s)).ToList();
+            }
+            else if (typeof(T) == typeof(float))
+            {
+                _lst = arr.Select(s => (T)(object)float.Parse(s)).ToList();
+            }
+            else if (typeof(T) == typeof(short))
+            {
+                _lst = arr.Select(s => (T)(object)short.Parse(s)).ToList();
+            }
+            else if (typeof(T) == typeof(ushort))
+            {
+                _lst = arr.Select(s => (T)(object)ushort.Parse(s)).ToList();
+            }
+            else
+            {
+                _lst = arr.Select(s => (T)(object)s).ToList();
+            }
+        }
+
+        public T ReadItem(int index)
+        {
+            return _lst[index];
+        }
+
+        public T[] ToArray()
         {
             return _lst.ToArray();
         }
@@ -126,9 +186,37 @@ namespace opcode4.utilities
             var s = ReadString(appKey);
             return new MultiValueParameter(s);
         }
+
+        public static MultiValueParameter ReadSaveMultiValueParameter(string appKey)
+        {
+            try
+            {
+                return new MultiValueParameter(ReadString(appKey));
+            }
+            catch
+            { return null; }
+
+        }
+
+        public static MultiValueParameter<T> ReadMultiValueParameter<T>(string appKey)
+        {
+            var s = ReadStringDef(appKey, "");
+            return new MultiValueParameter<T>(s);
+        }
+
+        public static MultiValueParameter<T> ReadSaveMultiValueParameter<T>(string appKey)
+        {
+            try
+            {
+                return new MultiValueParameter<T>(ReadString(appKey));
+            }
+            catch
+            { return null; }
+
+        }
         #endregion Read methods
 
-        public static string ServerID
+        public static string ServerId
         {
             get
             {
